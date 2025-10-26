@@ -6,9 +6,17 @@
   <title>Time Duration Calculator</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-950 text-gray-100 flex items-center justify-center min-h-screen p-6">
+<body class="bg-gray-950 text-gray-100 flex flex-col items-center justify-start min-h-screen p-6 space-y-10">
+
+  <!-- ===== Simple Time Duration Calculator ===== -->
   <div class="bg-gray-900 shadow-2xl rounded-2xl p-8 w-full max-w-md">
     <h1 class="text-2xl font-bold text-center mb-6 text-yellow-400">Time Duration Calculator</h1>
+
+    <p class="text-gray-400 mb-4 text-sm">
+      Easily calculate the duration between two times. Enter the start and end times in the format 
+      <strong>9:22 AM - 10:31 AM</strong> and instantly see the results in hours, minutes, and seconds.
+      Click on the hours to copy them to your clipboard for easy use.
+    </p>
 
     <div class="space-y-4">
       <label class="block text-gray-300 text-sm font-medium mb-1">Enter Time Interval:</label>
@@ -16,7 +24,7 @@
         id="timeInput"
         type="text"
         placeholder='e.g. 9:22 AM - 10:31 AM'
-        class="w-full px-4 py-3 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-yellow-400 outline-none"
+        class="w-full px-4 py-3 rounded-lg bg-gray-600 text-gray-100 focus:ring-2 focus:ring-yellow-400 outline-none"
       />
 
       <div id="output" class="mt-6 bg-gray-800 p-4 rounded-lg text-sm text-gray-300">
@@ -25,7 +33,59 @@
     </div>
   </div>
 
+  <!-- ===== Multi-Day Time Log Analyzer ===== -->
+  <div class="bg-gray-900 shadow-2xl rounded-2xl p-8 w-full max-w-2xl">
+    <h2 class="text-2xl font-bold text-center mb-6 text-green-400">Multi-Day Time Log Analyzer</h2>
+
+    <p class="text-gray-400 mb-4 text-sm">
+      Paste your daily time logs in the format <strong>Month Day, Year, StartTime - EndTime</strong>. 
+      The analyzer will calculate the total hours for each day. Click on any hour value to copy it to your clipboard.
+    </p>
+
+    <div class="space-y-4">
+      <label class="block text-gray-300 text-sm font-medium mb-1">Paste your daily logs:</label>
+      <textarea
+        id="multiInput"
+        rows="10"
+        placeholder="Paste your multiline input here..."
+        class="w-full px-4 py-3 rounded-lg bg-gray-600 text-gray-100 focus:ring-2 focus:ring-green-400 outline-none"
+      ></textarea>
+
+      <div id="multiOutput" class="mt-6 bg-gray-800 p-4 rounded-lg text-sm text-gray-300 whitespace-pre-line">
+        <p class="italic text-gray-500">Results will appear here...</p>
+      </div>
+      <p>
+        <br> <b>Example input:</b>
+        <br> Sep 20, 2025, 6:14 AM - 7:42 AM
+        <br> - did some task
+        <br> 
+        <br> Sep 21, 2025, 10:59 AM - 11:49 AM
+        <br> - did some other task
+        <br> - did task 3
+        <br> 
+        <br> Sep 23, 2025, 9:22 AM - 10:31 AM
+        <br> - did another task
+      </p>
+      <div id="copyTooltip" class="fixed top-4 right-4 bg-black text-white px-3 py-1 rounded opacity-0 transition-opacity duration-300 pointer-events-none">
+        Copied!
+      </div>
+    </div>
+  </div>
+</div>
+
   <script>
+    // --- Utility to copy text to clipboard ---
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        const tooltip = document.getElementById("copyTooltip");
+        tooltip.classList.add("opacity-100");
+        setTimeout(() => tooltip.classList.remove("opacity-100"), 1200);
+      });
+    }
+    
+
+
+    // --- Single-line calculator ---
     const input = document.getElementById("timeInput");
     const output = document.getElementById("output");
 
@@ -40,11 +100,9 @@
         const [startStr, endStr] = val.split("-").map(s => s.trim());
         const start = new Date("01/01/2000 " + startStr);
         const end = new Date("01/01/2000 " + endStr);
-
         if (isNaN(start) || isNaN(end)) throw new Error("Invalid time format");
-        let diffMs = end - start;
 
-        // Handle if end time is past midnight
+        let diffMs = end - start;
         if (diffMs < 0) diffMs += 24 * 3600 * 1000;
 
         const diffSec = Math.floor(diffMs / 1000);
@@ -57,7 +115,7 @@
 
         output.innerHTML = `
           <p class="text-yellow-300 font-semibold">The time between ${start.toLocaleTimeString()} and ${end.toLocaleTimeString()} is:</p>
-          <h1 class="mt-2 text-red-400 text-xl">${diffHr.toFixed(2)} hours</h1>
+          <h1 class="mt-2 text-red-400 text-xl cursor-pointer hover:text-red-300" onclick="copyToClipboard('${diffHr.toFixed(2)}')">${diffHr.toFixed(2)} hours</h1>
           <p>${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}, and ${seconds} second${seconds !== 1 ? 's' : ''}</p>
           <p class="mt-2">${diffMin} minutes</p>
           <p>${diffSec.toLocaleString()} seconds</p>
@@ -66,6 +124,54 @@
         output.innerHTML = `<p class='text-red-400 italic'>Invalid format. Try "9:22 AM - 10:31 AM".</p>`;
       }
     });
+
+    // --- Multi-day log analyzer ---
+    const multiInput = document.getElementById("multiInput");
+    const multiOutput = document.getElementById("multiOutput");
+
+    multiInput.addEventListener("input", () => {
+      const lines = multiInput.value.split("\n");
+      const dayTotals = {};
+
+      const dateTimeRegex = /^([A-Za-z]{3,9} \d{1,2}, \d{4})(?:,\s*(\d{1,2}:\d{2}\s*[APMapm]{2})\s*[-–to]+\s*(\d{1,2}:\d{2}\s*[APMapm]{2}))?/;
+
+      for (let line of lines) {
+        line = line.trim();
+        if (line.startsWith("-") || line === "") continue;
+
+        const match = line.match(dateTimeRegex);
+        if (match) {
+          const datePart = match[1];
+          const startTime = match[2];
+          const endTime = match[3];
+
+          let durationHrs = 0;
+          if (startTime && endTime) {
+            const start = new Date(`${datePart} ${startTime}`);
+            const end = new Date(`${datePart} ${endTime}`);
+            let diffMs = end - start;
+            if (diffMs < 0) diffMs += 24 * 3600 * 1000;
+            durationHrs = diffMs / 3600000;
+          } else {
+            durationHrs = 5; // default
+          }
+
+          if (!dayTotals[datePart]) dayTotals[datePart] = 0;
+          dayTotals[datePart] += durationHrs;
+        }
+      }
+
+      if (Object.keys(dayTotals).length === 0) {
+        multiOutput.innerHTML = "<p class='text-gray-500 italic'>No valid time entries found.</p>";
+        return;
+      }
+
+      multiOutput.innerHTML = Object.entries(dayTotals)
+        .map(([date, hours]) => 
+          `<span class="cursor-pointer hover:text-green-300" onclick="copyToClipboard('${hours.toFixed(2)}')">${date} → ${hours.toFixed(2)} hours</span>`
+        ).join("<br>");
+    });
   </script>
+  <p class="italic text-gray-500">Powered by <a href="https://techylem.com/" target="_blank" class="text-gray-300">Techylem</a></p>
 </body>
 </html>
