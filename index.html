@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time Duration Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 flex items-center justify-center min-h-screen p-6">
+  <div class="bg-gray-900 shadow-2xl rounded-2xl p-8 w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center mb-6 text-yellow-400">Time Duration Calculator</h1>
+
+    <div class="space-y-4">
+      <label class="block text-gray-300 text-sm font-medium mb-1">Enter Time Interval:</label>
+      <input
+        id="timeInput"
+        type="text"
+        placeholder='e.g. 9:22 AM - 10:31 AM'
+        class="w-full px-4 py-3 rounded-lg bg-gray-800 text-gray-100 focus:ring-2 focus:ring-yellow-400 outline-none"
+      />
+
+      <div id="output" class="mt-6 bg-gray-800 p-4 rounded-lg text-sm text-gray-300">
+        <p class="italic text-gray-500">Results will appear here...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById("timeInput");
+    const output = document.getElementById("output");
+
+    input.addEventListener("input", () => {
+      const val = input.value.trim();
+      if (!val.includes("-")) {
+        output.innerHTML = "<p class='text-gray-500 italic'>Please use format like: 9:22 AM - 10:31 AM</p>";
+        return;
+      }
+
+      try {
+        const [startStr, endStr] = val.split("-").map(s => s.trim());
+        const start = new Date("01/01/2000 " + startStr);
+        const end = new Date("01/01/2000 " + endStr);
+
+        if (isNaN(start) || isNaN(end)) throw new Error("Invalid time format");
+        let diffMs = end - start;
+
+        // Handle if end time is past midnight
+        if (diffMs < 0) diffMs += 24 * 3600 * 1000;
+
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHr = diffMin / 60;
+
+        const hours = Math.floor(diffMin / 60);
+        const minutes = diffMin % 60;
+        const seconds = diffSec % 60;
+
+        output.innerHTML = `
+          <p class="text-yellow-300 font-semibold">The time between ${start.toLocaleTimeString()} and ${end.toLocaleTimeString()} is:</p>
+          <h1 class="mt-2 text-red-400 text-xl">${diffHr.toFixed(2)} hours</h1>
+          <p>${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}, and ${seconds} second${seconds !== 1 ? 's' : ''}</p>
+          <p class="mt-2">${diffMin} minutes</p>
+          <p>${diffSec.toLocaleString()} seconds</p>
+        `;
+      } catch (e) {
+        output.innerHTML = `<p class='text-red-400 italic'>Invalid format. Try "9:22 AM - 10:31 AM".</p>`;
+      }
+    });
+  </script>
+</body>
+</html>
